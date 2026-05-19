@@ -1,0 +1,43 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: py-deploy-23
+  namespace: ns23
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: python-app-23
+  template:
+    metadata:
+      labels:
+        app: python-app-23
+    spec:
+      containers:
+        - name: python-container
+          image: vishwacloudlab/pythonapp:v4-var
+          volumeMounts:
+          - mountPath: "/code"
+            name: storage-23
+          ports:
+            - containerPort: 8000
+          env:
+            - name: REDIS_HOST
+              value: "redis-service-23"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+      volumes:
+        - name: storage-23
+          persistentVolumeClaim:
+            claimName: pvc-23
