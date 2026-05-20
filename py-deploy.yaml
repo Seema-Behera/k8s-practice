@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: python-container
-          image: vishwacloudlab/pythonapp:v4-var
+          image: seema028/py-may26
           volumeMounts:
           - mountPath: "/code"
             name: storage-23
