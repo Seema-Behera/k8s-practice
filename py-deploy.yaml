@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
         - name: python-container
-          image: seema028/py-may26
+          image: seema028/py-may26:${IMAGE_TAG}
           volumeMounts:
           - mountPath: "/code"
             name: storage-23

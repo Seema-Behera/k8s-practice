@@ -61,15 +61,6 @@ pipeline {
         '''
       }
     }
-    stage('Deployment on Kubernetes') {
-      steps {
-        sh '''
-          export KUBECONFIG=$HOME/k8s-3-node.conf
-          kubectl apply -f .
-
-        '''
-      }
-    }
     stage('Application Health Check') {
       steps {
         sh '''
