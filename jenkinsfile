@@ -23,6 +23,23 @@ pipeline {
         '''
       }
     }
+        stage('Push Docker Image') {
+        steps {
+            withCredentials([
+            usernamePassword(
+                credentialsId: 'ns23-dockerhub-cred',
+                usernameVariable: 'DOCKERHUB_USER',
+                passwordVariable: 'DOCKERHUB_PASS'
+            )
+            ]) {
+            sh '''
+                echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
+                docker push seema028/py-may26:$BUILD_NUMBER
+                docker logout
+            '''
+            }
+        }
+    }
     stage('Check on Kubernetes') {
       steps {
         sh '''
