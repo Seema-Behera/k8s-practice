@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.pythonApp.service.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  type: {{ .Values.pythonApp.service.type }}
+  selector:
+    app: {{ .Values.pythonApp.appLabel }}
+  ports:
+    - port: {{ .Values.pythonApp.service.port }}
+      targetPort: {{ .Values.pythonApp.service.targetPort }}
+      {{- if eq .Values.pythonApp.service.type "NodePort" }}
+      nodePort: {{ .Values.pythonApp.service.nodePort }}
+      {{- end }}

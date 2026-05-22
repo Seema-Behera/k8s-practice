@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.pythonApp.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: {{ .Values.strategy.type }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.strategy.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.strategy.rollingUpdate.maxSurge }}
+  selector:
+    matchLabels:
+      app: {{ .Values.pythonApp.appLabel }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.pythonApp.appLabel }}
+    spec:
+      containers:
+        - name: {{ .Values.pythonApp.containerName }}
+          image: "{{ .Values.pythonApp.image.repository }}:{{ .Values.pythonApp.image.tag }}"
+          imagePullPolicy: {{ .Values.pythonApp.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.pythonApp.port }}
+          env:
+            - name: REDIS_HOST
+              value: "{{ .Values.env.redisHost }}"
+          volumeMounts:
+            - mountPath: "{{ .Values.pythonApp.mountPath }}"
+              name: {{ .Values.pythonApp.volumeName }}
+          resources:
+            requests:
+              cpu: "{{ .Values.pythonApp.resources.requests.cpu }}"
+              memory: "{{ .Values.pythonApp.resources.requests.memory }}"
+            limits:
+              cpu: "{{ .Values.pythonApp.resources.limits.cpu }}"
+              memory: "{{ .Values.pythonApp.resources.limits.memory }}"
+      volumes:
+        - name: {{ .Values.pythonApp.volumeName }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.pvc.name }}

@@ -1,0 +1,76 @@
+namespace: ns23
+
+replicaCount: 3
+
+pythonApp:
+  name: py-deploy-23
+  appLabel: python-app-23
+  containerName: python-container
+  image:
+    repository: seema028/py-may26
+    tag: "22"
+    pullPolicy: IfNotPresent
+  port: 8000
+  mountPath: /code
+  volumeName: storage-23
+  service:
+    name: py-service-23
+    type: NodePort
+    port: 8000
+    targetPort: 8000
+    nodePort: 31123
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+redis:
+  name: redis-deploy-23
+  appLabel: redis-app-23
+  containerName: redis-container
+  image:
+    repository: redis
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 6379
+  replicas: 1
+  service:
+    name: redis-service-23
+    type: ClusterIP
+    port: 6379
+    targetPort: 6379
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+env:
+  redisHost: redis-service-23
+
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 1
+
+persistence:
+  pv:
+    name: pv-23
+    label: fast-23
+    storage: 5Gi
+    reclaimPolicy: Retain
+    storageClassName: manual
+    nfs:
+      path: /srv/nfs/kubedata/pyapp
+      server: 172.31.11.26
+  pvc:
+    name: pvc-23
+    storage: 1Gi
+    accessMode: ReadWriteOnce
+    storageClassName: manual
