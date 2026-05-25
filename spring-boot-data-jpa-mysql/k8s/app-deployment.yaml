@@ -16,7 +16,7 @@ spec:
       - name: regcred
       containers:
         - name: springboot-app
-          image: seema028/springboot-mysql-app:7
+          image: seema028/springboot-mysql-app:${IMAGE_TAG}
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
