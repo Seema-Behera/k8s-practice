@@ -1,0 +1,129 @@
+pipeline {
+  agent { label 'ns23-kube' }
+
+  environment {
+    IMAGE_NAME = "seema028/springboot-mysql-app"
+    KUBE_CONFIG = "$HOME/k8s-3-node.conf"
+    APP_URL = "http://172.31.11.26:30188"
+  }
+
+  stages {
+
+    stage('Checkout') {
+      steps {
+        git branch: 'main',
+            credentialsId: 'ns23-github-cred',
+            url: 'git@github.com:Seema-Behera/k8s-practice.git'
+      }
+    }
+
+    stage('Check Tools') {
+      steps {
+        sh '''
+          java --version
+          mvn --version
+          docker --version
+          kubectl version --client
+        '''
+      }
+    }
+
+    stage('Build JAR') {
+      steps {
+        sh '''
+          mvn -f spring-boot-data-jpa-mysql/pom.xml clean package -DskipTests
+        '''
+      }
+    }
+
+    stage('Build Docker Image') {
+      steps {
+        sh '''
+          docker build -t $IMAGE_NAME:$BUILD_NUMBER .
+          docker tag $IMAGE_NAME:$BUILD_NUMBER $IMAGE_NAME:latest
+        '''
+      }
+    }
+
+    stage('Push Docker Image') {
+      steps {
+        withCredentials([
+          usernamePassword(
+            credentialsId: 'ns23-dockerhub-cred',
+            usernameVariable: 'DOCKERHUB_USER',
+            passwordVariable: 'DOCKERHUB_PASS'
+          )
+        ]) {
+          sh '''
+            echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
+            docker push $IMAGE_NAME:$BUILD_NUMBER
+            docker push $IMAGE_NAME:latest
+            docker logout
+          '''
+        }
+      }
+    }
+
+    stage('Check Kubernetes Cluster') {
+      steps {
+        sh '''
+          export KUBECONFIG=$KUBE_CONFIG
+          kubectl get nodes
+          kubectl get pods
+          kubectl get svc
+          kubectl get deployments
+        '''
+      }
+    }
+
+    stage('Deploy MySQL and Services') {
+      steps {
+        sh '''
+          export KUBECONFIG=$KUBE_CONFIG
+          kubectl apply -f k8s/app-configmap.yaml
+          kubectl apply -f k8s/mysql-deployment.yaml
+          kubectl apply -f k8s/mysql-service.yaml
+          kubectl apply -f k8s/app-service.yaml
+        '''
+      }
+    }
+
+    stage('Deploy Spring Boot App') {
+      steps {
+        sh '''
+          export KUBECONFIG=$KUBE_CONFIG
+          export IMAGE_TAG=$BUILD_NUMBER
+          envsubst < k8s/app-deployment.yaml | kubectl apply -f -
+          kubectl rollout status deployment/springboot-app
+        '''
+      }
+    }
+
+    stage('Health Check - GET') {
+      steps {
+        sh '''
+          sleep 15
+          curl $APP_URL/api/tutorials
+        '''
+      }
+    }
+
+    stage('Insert Sample Data - POST') {
+      steps {
+        sh '''
+          curl -X POST $APP_URL/api/tutorials \
+          -H "Content-Type: application/json" \
+          -d '{"title":"Assignment5 Demo","description":"Jenkins pipeline build '$BUILD_NUMBER'","published":true}'
+        '''
+      }
+    }
+
+    stage('Verify Data - GET') {
+      steps {
+        sh '''
+          curl $APP_URL/api/tutorials
+        '''
+      }
+    }
+  }
+}
